@@ -72,14 +72,13 @@ func main() {
 		}
 
 		var todo TodoRes
-		query := "insert into todos (title, category, description) values (?, ?, ?) returning id, title, category, description, complete, created_at, updated_at"
-		db.Raw(query, body.Title, body.Category, body.Description).Scan(&todo)
+		db.Raw("insert into todos (title, category, description) values (?, ?, ?) returning id, title, category, description, completed, created_at, updated_at", body.Title, body.Category, body.Description).Scan(&todo)
 
 		c.JSON(200, todo)
 	})
 
 	r.DELETE("/todos/:id", func(c *gin.Context) {
-		deletedID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+		ID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 		if err != nil {
 			c.JSON(400, gin.H{
 				"message": "id must be number",
@@ -87,8 +86,9 @@ func main() {
 			return
 		}
 
-		result := db.Exec("delete from todos where id = ?", deletedID).Select("id").RowsAffected
-		if result == 0 {
+		var deletedID uint
+		db.Raw("delete from todos where id = ? returning id", ID).Scan(&deletedID)
+		if deletedID == 0 {
 			c.JSON(404, gin.H{
 				"message": "not found",
 			})
