@@ -10,16 +10,6 @@ import (
 	"time"
 )
 
-type Todo struct {
-	ID          uint `gorm:"primaryKey"`
-	Title       string
-	category    string `gorm:"null;default:''"`
-	description string `gorm:"null;default:''"`
-	completed   bool   `gorm:"default:false"`
-	createdAt   time.Time
-	updatedAt   time.Time
-}
-
 type TodoRes struct {
 	ID          uint      `json:"id"`
 	Title       string    `json:"title"`
@@ -98,6 +88,10 @@ func main() {
 		c.JSON(200, gin.H{
 			"message": "deleted",
 		})
+	})
+
+	r.PATCH("/todos/:id", func(c *gin.Context) {
+
 	})
 
 	r.Run() // listen and serve on 0.0.0.0:8080
