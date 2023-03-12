@@ -36,8 +36,7 @@ func main() {
 		var todos []Todo
 		c.Bind(&title)
 
-		db.Find(&todos)
-		fmt.Println(todos)
+		db.Raw("select * from todos where title like ?", "%"+title.Title+"%").Scan(&todos)
 		c.JSON(200, gin.H{
 			"todos": todos,
 		})
