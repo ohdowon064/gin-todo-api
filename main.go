@@ -12,11 +12,21 @@ import (
 type Todo struct {
 	ID          uint `gorm:"primaryKey"`
 	Title       string
-	category    string
-	description string
-	completed   bool
+	category    string `gorm:"null;default:''"`
+	description string `gorm:"null;default:''"`
+	completed   bool   `gorm:"default:false"`
 	createdAt   time.Time
 	updatedAt   time.Time
+}
+
+type TodoRes struct {
+	ID          uint      `json:"id"`
+	Title       string    `json:"title"`
+	Category    *string   `json:"category"`
+	Description *string   `json:"description"`
+	Completed   bool      `json:"completed"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 type GetTitle struct {
@@ -43,7 +53,7 @@ func main() {
 	r := gin.Default()
 	r.GET("/todos", func(c *gin.Context) {
 		var title GetTitle
-		var todos []Todo
+		var todos []TodoRes
 		c.Bind(&title)
 
 		db.Raw("select * from todos where title ilike ?", "%"+title.Title+"%").Scan(&todos)
@@ -60,7 +70,7 @@ func main() {
 			return
 		}
 
-		var todo Todo
+		var todo TodoRes
 		db.Raw("insert into todos (title, category, description) values (?, ?, ?) returning id", body.Title, body.Category, body.Description).Scan(&todo)
 
 		c.JSON(200, todo)
