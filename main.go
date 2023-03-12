@@ -24,10 +24,17 @@ type GetTitle struct {
 	Title string `form:"title"`
 }
 
-type CreateTodoRequestBody struct {
+type CreateTodoReqBody struct {
 	Title       string `json:"title" binding:"required"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
+}
+
+type UpdateTodoReqBody struct {
+	Title       *string `json:"title"`
+	Category    *string `json:"category"`
+	Description *string `json:"description"`
+	Completed   *bool   `json:"completed"`
 }
 
 func main() {
@@ -52,7 +59,7 @@ func main() {
 	})
 
 	r.POST("/todos", func(c *gin.Context) {
-		var body CreateTodoRequestBody
+		var body CreateTodoReqBody
 		if err := c.Bind(&body); err != nil {
 			fmt.Println(err)
 			c.JSON(400, gin.H{
@@ -91,7 +98,53 @@ func main() {
 	})
 
 	r.PATCH("/todos/:id", func(c *gin.Context) {
+		ID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": "id must be number",
+			})
+			return
+		}
 
+		var body UpdateTodoReqBody
+		if err := c.Bind(&body); err != nil {
+			fmt.Println(err)
+			c.JSON(400, gin.H{
+				"message": "invalid request body",
+			})
+			return
+		}
+
+		var todo TodoRes
+		db.Raw("select * from todos where id = ?", ID).Scan(&todo)
+
+		if todo.ID == 0 {
+			c.JSON(404, gin.H{
+				"message": "not found",
+			})
+			return
+		}
+
+		fmt.Println(todo)
+
+		if body.Title != nil {
+			todo.Title = *body.Title
+		}
+		if body.Category != nil {
+			todo.Category = body.Category
+		}
+		if body.Description != nil {
+			todo.Description = body.Description
+		}
+		if body.Completed != nil {
+			todo.Completed = *body.Completed
+		}
+
+		fmt.Println(todo)
+
+		db.Exec("update todos set title = ?, category = ?, description = ?, completed = ? where id = ?", todo.Title, todo.Category, todo.Description, todo.Completed, ID)
+
+		c.JSON(204, gin.H{})
 	})
 
 	r.Run() // listen and serve on 0.0.0.0:8080
