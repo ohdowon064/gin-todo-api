@@ -58,6 +58,28 @@ func main() {
 		c.JSON(200, todos)
 	})
 
+	r.GET("/todos/:id", func(c *gin.Context) {
+		ID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": "id must be number",
+			})
+			return
+		}
+
+		var todo TodoRes
+		db.Raw("select * from todos where id = ?", ID).Scan(&todo)
+
+		if todo.ID == 0 {
+			c.JSON(404, gin.H{
+				"message": "not found",
+			})
+			return
+		}
+
+		c.JSON(200, todo)
+	})
+
 	r.POST("/todos", func(c *gin.Context) {
 		var body CreateTodoReqBody
 		if err := c.Bind(&body); err != nil {
