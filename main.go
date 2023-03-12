@@ -6,6 +6,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"strconv"
 	"time"
 )
 
@@ -71,9 +72,32 @@ func main() {
 		}
 
 		var todo TodoRes
-		db.Raw("insert into todos (title, category, description) values (?, ?, ?) returning id", body.Title, body.Category, body.Description).Scan(&todo)
+		query := "insert into todos (title, category, description) values (?, ?, ?) returning id, title, category, description, complete, created_at, updated_at"
+		db.Raw(query, body.Title, body.Category, body.Description).Scan(&todo)
 
 		c.JSON(200, todo)
+	})
+
+	r.DELETE("/todos/:id", func(c *gin.Context) {
+		deletedID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"message": "id must be number",
+			})
+			return
+		}
+
+		result := db.Exec("delete from todos where id = ?", deletedID).Select("id").RowsAffected
+		if result == 0 {
+			c.JSON(404, gin.H{
+				"message": "not found",
+			})
+			return
+		}
+
+		c.JSON(200, gin.H{
+			"message": "deleted",
+		})
 	})
 
 	r.Run() // listen and serve on 0.0.0.0:8080
