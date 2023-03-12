@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"time"
 )
 
@@ -24,7 +25,10 @@ type GetTitle struct {
 
 func main() {
 	dsn := "host=localhost dbname=gin_todo_app port=5432 sslmode=disable TimeZone=Asia/Seoul"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
+
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -36,7 +40,7 @@ func main() {
 		var todos []Todo
 		c.Bind(&title)
 
-		db.Raw("select * from todos where title like ?", "%"+title.Title+"%").Scan(&todos)
+		db.Raw("select * from todos where title ilike ?", "%"+title.Title+"%").Scan(&todos)
 		c.JSON(200, gin.H{
 			"todos": todos,
 		})
